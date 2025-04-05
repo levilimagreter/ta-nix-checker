@@ -46,11 +46,11 @@ EOF
 
       - name: Upload .deb and create GitHub Release
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: "Versão ${{ steps.vars.outputs.VERSION }}"
           tag_name: v${{ steps.vars.outputs.VERSION }}
           files: ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
