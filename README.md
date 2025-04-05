@@ -1,2 +1,19 @@
-# ta-nix-checker
-Checking operating system prerequisites before installing the Splunk Add-on for Unix and Linux (833)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+# TA-nix Checker
+
+Agente de verificação de compatibilidade de sistemas Unix/Linux com o Splunk Add-on for Unix and Linux (TA-nix).
+
+## Instalação
+
+Execute no terminal:
+
+```bash
+curl -s https://raw.githubusercontent.com/usuario/ta-nix-checker/main/install.sh | bash
+```
+
+## Branches
+
+- `main` - Última versão estável (produção)
+- `stable` - Candidata a release final
+- `dev` - Desenvolvimento ativo
