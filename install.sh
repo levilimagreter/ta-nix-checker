@@ -1,6 +1,3 @@
-# MIT License - 2025 Levi Lima Greter
-# See LICENSE
-
 #!/bin/bash
 set -e
 
@@ -8,13 +5,13 @@ echo "[TA-nix] Detectando sistema operacional..."
 
 if [ -f /etc/debian_version ]; then
     echo "[TA-nix] Detected Debian-based system"
-    PKG_URL="https://github.com/usuario/ta-nix-checker/releases/latest/download/ta-nix-checker_1.0.0.deb"
+    PKG_URL=$(curl -s https://api.github.com/repos/levilimagreter/ta-nix-checker/releases/latest | grep browser_download_url | grep .deb | cut -d '"' -f 4)
     curl -sL "$PKG_URL" -o ta-nix.deb
     sudo dpkg -i ta-nix.deb
 
 elif [ -f /etc/redhat-release ] || [ -f /etc/centos-release ]; then
     echo "[TA-nix] Detected RHEL-based system"
-    PKG_URL="https://github.com/usuario/ta-nix-checker/releases/latest/download/ta-nix-checker-1.0.0-1.noarch.rpm"
+    PKG_URL=$(curl -s https://api.github.com/repos/levilimagreter/ta-nix-checker/releases/latest | grep browser_download_url | grep .rpm | cut -d '"' -f 4)
     curl -sL "$PKG_URL" -o ta-nix.rpm
     sudo rpm -Uvh ta-nix.rpm
 
