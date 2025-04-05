@@ -37,9 +37,6 @@ jobs:
           chmod +x build/deb/usr/local/bin/ta-nix-check
           chmod +x build/rpm/usr/local/bin/ta-nix-check
 
-      - name: Show contents of build dir
-        run: ls -lh build/deb/usr/local/bin/
-
       - name: Create control file for .deb
         run: |
           mkdir -p build/deb/DEBIAN
