@@ -1,0 +1,71 @@
+name: Build and Release TA-nix Checker
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build and Package
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up build directories
+        run: |
+          mkdir -p build/deb/usr/local/bin
+          mkdir -p build/rpm/usr/local/bin
+          mkdir -p build/DEBIAN
+
+      - name: Copy files to build dirs
+        run: |
+          cp ta_nix_verification_cli.py build/deb/usr/local/bin/
+          cp ta_nix_verification_cli.py build/rpm/usr/local/bin/
+          echo '#!/bin/bash\nexec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' > build/deb/usr/local/bin/ta-nix-check
+          echo '#!/bin/bash\nexec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' > build/rpm/usr/local/bin/ta-nix-check
+          chmod +x build/deb/usr/local/bin/ta-nix-check
+          chmod +x build/rpm/usr/local/bin/ta-nix-check
+
+      - name: Create control file for .deb
+        run: |
+          echo 'Package: ta-nix-checker' > build/DEBIAN/control
+          echo 'Version: 1.0.0' >> build/DEBIAN/control
+          echo 'Section: utils' >> build/DEBIAN/control
+          echo 'Priority: optional' >> build/DEBIAN/control
+          echo 'Architecture: all' >> build/DEBIAN/control
+          echo 'Maintainer: Levi Lima Greter' >> build/DEBIAN/control
+          echo 'Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)' >> build/DEBIAN/control
+
+      - name: Build .deb package
+        run: |
+          dpkg-deb --build --root-owner-group build/deb ta-nix-checker_1.0.0.deb
+
+      - name: Create .rpm (dummy) package
+        run: |
+          mkdir -p rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+          cp ta_nix_verification_cli.py rpmbuild/SOURCES/
+          echo '
+          Name: ta-nix-checker
+          Version: 1.0.0
+          Release: 1
+          Summary: Verificador TA-nix
+          License: MIT
+          BuildArch: noarch
+          Requires: python3
+          %description
+          Verifica pré-requisitos para o Splunk TA-nix
+          %files
+          /usr/local/bin/ta_nix_verification_cli.py
+          /usr/local/bin/ta-nix-check
+          ' > rpmbuild/SPECS/ta-nix-checker.spec || true
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ta-nix-checker_1.0.0.deb
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
