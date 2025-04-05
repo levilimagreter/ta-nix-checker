@@ -20,16 +20,24 @@ jobs:
 
       - name: Prepare build structure
         run: |
-          mkdir -p ta-nix-checker/usr/local/bin
-          cp scripts/ta_nix_verification_cli.py ta-nix-checker/usr/local/bin/
-          echo '#!/bin/bash' > ta-nix-checker/usr/local/bin/ta-nix-check
-          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
-          chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
+          mkdir -p build/deb/usr/local/bin
+          mkdir -p build/rpm/usr/local/bin
 
-      - name: Create DEBIAN control file with dynamic version
+      - name: Copy files to build dirs
         run: |
-          mkdir -p ta-nix-checker/DEBIAN
-          cat <<EOF > ta-nix-checker/DEBIAN/control
+          cp scripts/ta_nix_verification_cli.py build/deb/usr/local/bin/
+          cp scripts/ta_nix_verification_cli.py build/rpm/usr/local/bin/
+          echo '#!/bin/bash' > build/deb/usr/local/bin/ta-nix-check
+          echo '#!/bin/bash' > build/rpm/usr/local/bin/ta-nix-check
+          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> build/deb/usr/local/bin/ta-nix-check
+          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> build/rpm/usr/local/bin/ta-nix-check
+          chmod +x build/deb/usr/local/bin/ta-nix-check
+          chmod +x build/rpm/usr/local/bin/ta-nix-check
+
+      - name: Create control file for .deb
+        run: |
+          mkdir -p build/deb/DEBIAN
+          cat <<EOF > build/deb/DEBIAN/control
 Package: ta-nix-checker
 Version: ${{ steps.vars.outputs.VERSION }}
 Section: utils
@@ -41,8 +49,8 @@ EOF
 
       - name: Build .deb package
         run: |
-          dpkg-deb --build ta-nix-checker
-          mv ta-nix-checker.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
+          dpkg-deb --build build/deb
+          mv build.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
 
       - name: Upload .deb and create GitHub Release
         uses: softprops/action-gh-release@v2
