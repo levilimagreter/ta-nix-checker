@@ -44,9 +44,13 @@ EOF
           dpkg-deb --build ta-nix-checker
           mv ta-nix-checker.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
 
-      - name: Upload .deb to GitHub Release
+      - name: Upload .deb and create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: "Versão ${{ steps.vars.outputs.VERSION }}"
+          tag_name: v${{ steps.vars.outputs.VERSION }}
           files: ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
