@@ -45,15 +45,13 @@ jobs:
       - name: Create control file for .deb
         run: |
           mkdir -p build/deb/DEBIAN
-          cat <<EOF > build/deb/DEBIAN/control
-Package: ta-nix-checker
-Version: ${{ steps.vars.outputs.VERSION }}
-Section: utils
-Priority: optional
-Architecture: all
-Maintainer: Levi Lima Greter
-Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)
-EOF
+          echo "Package: ta-nix-checker" > build/deb/DEBIAN/control
+          echo "Version: ${{ steps.vars.outputs.VERSION }}" >> build/deb/DEBIAN/control
+          echo "Section: utils" >> build/deb/DEBIAN/control
+          echo "Priority: optional" >> build/deb/DEBIAN/control
+          echo "Architecture: all" >> build/deb/DEBIAN/control
+          echo "Maintainer: Levi Lima Greter" >> build/deb/DEBIAN/control
+          echo "Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)" >> build/deb/DEBIAN/control
           echo "[OK] Arquivo de controle criado."
 
       - name: Build .deb package
