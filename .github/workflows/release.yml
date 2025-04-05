@@ -51,7 +51,7 @@ jobs:
       - name: Build .deb package
         run: |
           dpkg-deb --build build/deb
-          mv build.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
+          mv build/deb.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
 
       - name: Upload .deb and create GitHub Release
         uses: softprops/action-gh-release@v2
