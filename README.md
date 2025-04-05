@@ -9,7 +9,7 @@ Agente de verificação de compatibilidade de sistemas Unix/Linux com o Splunk A
 Execute no terminal:
 
 ```bash
-curl -s https://raw.githubusercontent.com/usuario/ta-nix-checker/main/install.sh | bash
+curl -s https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/main/install.sh | bash
 ```
 
 ## Branches
