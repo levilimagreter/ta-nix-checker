@@ -21,7 +21,7 @@ jobs:
       - name: Prepare build structure
         run: |
           mkdir -p ta-nix-checker/usr/local/bin
-          cp ta_nix_verification_cli.py ta-nix-checker/usr/local/bin/
+          cp scripts/ta_nix_verification_cli.py ta-nix-checker/usr/local/bin/
           echo '#!/bin/bash' > ta-nix-checker/usr/local/bin/ta-nix-check
           echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
           chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
