@@ -3,22 +3,18 @@ name: Build and Release TA-nix Checker
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 jobs:
   build-and-release:
-    name: Build and Publish Release
     runs-on: ubuntu-latest
+    name: Build and Publish Release
 
     steps:
-      - name: Checkout código
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Extrair versão da tag
-        id: version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-
-      - name: Preparar estrutura do pacote
+      - name: Prepare build structure
         run: |
           mkdir -p ta-nix-checker/usr/local/bin
           cp scripts/ta_nix_verification_cli.py ta-nix-checker/usr/local/bin/
@@ -26,7 +22,10 @@ jobs:
           echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
           chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
 
-      - name: Criar pacote .deb
+      - name: Extract version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Create DEBIAN control file
         run: |
           mkdir -p ta-nix-checker/DEBIAN
           cat <<EOF > ta-nix-checker/DEBIAN/control
@@ -38,25 +37,27 @@ Architecture: all
 Maintainer: Levi Lima Greter
 Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)
 EOF
+
+      - name: Build .deb package
+        run: |
           dpkg-deb --build ta-nix-checker
           mv ta-nix-checker.deb ta-nix-checker_${{ env.VERSION }}.deb
 
-      - name: Criar pacote .tar.gz
+      - name: Build .tar.gz package
         run: |
-          tar -czf ta-nix-checker-${{ env.VERSION }}.tar.gz -C ta-nix-checker .
+          tar -czf ta-nix-checker-${{ env.VERSION }}.tar.gz ta-nix-checker
 
-      - name: Criar pacote .rpm (via fpm)
+      - name: Build .rpm package
         run: |
-          sudo apt-get update && sudo apt-get install -y ruby ruby-dev build-essential
-          sudo gem install --no-document fpm
-          fpm -s dir -t rpm -n ta-nix-checker -v ${{ env.VERSION }} -C ta-nix-checker .
+          mkdir -p rpmroot/usr/local/bin
+          cp scripts/ta_nix_verification_cli.py rpmroot/usr/local/bin/
+          echo '#!/bin/bash' > rpmroot/usr/local/bin/ta-nix-check
+          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> rpmroot/usr/local/bin/ta-nix-check
+          chmod +x rpmroot/usr/local/bin/ta-nix-check
+          fpm -s dir -t rpm -n ta-nix-checker -v ${{ env.VERSION }} -C rpmroot .
 
-      - name: Renomear .rpm corretamente
-        run: |
-          mv ta-nix-checker-${{ env.VERSION }}-1.noarch.rpm ta-nix-checker-${{ env.VERSION }}.rpm
-
-      - name: Publicar Release no GitHub
-        uses: softprops/action-gh-release@v2
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
           files: |
             ta-nix-checker_${{ env.VERSION }}.deb
