@@ -3,7 +3,7 @@
 set -e
 
 VERSION="1.1.4"
-REPO_URL="https://example.com/releases"  # Substitua pelo caminho real no GitHub se for usar wget
+REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/main/dist"
 
 # Detectar distribuição
 if [ -f /etc/os-release ]; then
