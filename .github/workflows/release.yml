@@ -21,18 +21,11 @@ jobs:
           echo '#!/bin/bash' > ta-nix-checker/usr/local/bin/ta-nix-check
           echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
           chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
- Check failure on line 24 in .github/workflows/release.yml
 
-
-GitHub Actions
-/ .github/workflows/release.yml
-Invalid workflow file
-
-You have an error in your yaml syntax on line 24
       - name: Extract version from tag
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-        - name: Create DEBIAN control file
+      - name: Create DEBIAN control file
         run: |
           mkdir -p ta-nix-checker/DEBIAN
           echo "Package: ta-nix-checker" > ta-nix-checker/DEBIAN/control
@@ -42,15 +35,16 @@ You have an error in your yaml syntax on line 24
           echo "Architecture: all" >> ta-nix-checker/DEBIAN/control
           echo "Maintainer: Levi Lima Greter" >> ta-nix-checker/DEBIAN/control
           echo "Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)" >> ta-nix-checker/DEBIAN/control
-EOF
 
       - name: Build .deb package
         run: |
           dpkg-deb --build ta-nix-checker
           mv ta-nix-checker.deb ta-nix-checker_${{ env.VERSION }}.deb
+
       - name: Build .tar.gz package
         run: |
           tar -czf ta-nix-checker-${{ env.VERSION }}.tar.gz ta-nix-checker
+
       - name: Build .rpm package
         run: |
           mkdir -p rpmroot/usr/local/bin
@@ -59,6 +53,7 @@ EOF
           echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> rpmroot/usr/local/bin/ta-nix-check
           chmod +x rpmroot/usr/local/bin/ta-nix-check
           fpm -s dir -t rpm -n ta-nix-checker -v ${{ env.VERSION }} -C rpmroot .
+
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
