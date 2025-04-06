@@ -2,30 +2,45 @@
 
 set -e
 
-# Obtém a versão da tag atual no GitHub Actions ou manualmente via argumento
-if [ -n "$GITHUB_REF" ]; then
-    VERSION=$(basename "$GITHUB_REF")
-else
-    VERSION=${1:-"1.1.4"}
-fi
+cd "$(dirname "$0")/.."  # volta para raiz do projeto
 
-# Remove prefixo "v" se existir
-VERSION=${VERSION#v}
-
+VERSION=$1
 echo "Building version: $VERSION"
 
-# Criação do diretório de saída
-mkdir -p dist/usr/local/bin
-cp ta-nix-checker dist/usr/local/bin/
-cp ta_nix_verification_cli.py dist/usr/local/bin/
+# Preparar estrutura DEB e TAR.GZ
+mkdir -p ta-nix-checker/usr/local/bin
+cp ta_nix_verifier/cli.py ta-nix-checker/usr/local/bin/ta_nix_verification_cli.py
+echo '#!/bin/bash' > ta-nix-checker/usr/local/bin/ta-nix-check
+echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
+chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
 
-# Gerar pacotes
-fpm -s dir -t deb -n ta-nix-checker -v "$VERSION" --license MIT \
-  --description "TA-nix prerequisite checker for Splunk Add-on for Unix/Linux" \
-  --maintainer "Levi Lima Greter" --prefix=/ dist
+# Criar arquivo de controle para DEB
+mkdir -p ta-nix-checker/DEBIAN
+cat <<EOF > ta-nix-checker/DEBIAN/control
+Package: ta-nix-checker
+Version: $VERSION
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Levi Lima Greter
+Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)
+EOF
 
-fpm -s dir -t rpm -n ta-nix-checker -v "$VERSION" --license MIT \
-  --description "TA-nix prerequisite checker for Splunk Add-on for Unix/Linux" \
-  --maintainer "Levi Lima Greter" --prefix=/ dist
+# Build .deb
+dpkg-deb --build ta-nix-checker
+mv ta-nix-checker.deb dist/ta-nix-checker_${VERSION}.deb
 
-tar -czf "ta-nix-checker-$VERSION.tar.gz" -C dist .
+# Build .tar.gz
+tar -czf dist/ta-nix-checker-${VERSION}.tar.gz ta-nix-checker
+
+# Build .rpm (usando fpm)
+mkdir -p rpmroot/usr/local/bin
+cp ta_nix_verifier/cli.py rpmroot/usr/local/bin/ta_nix_verification_cli.py
+echo '#!/bin/bash' > rpmroot/usr/local/bin/ta-nix-check
+echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> rpmroot/usr/local/bin/ta-nix-check
+chmod +x rpmroot/usr/local/bin/ta-nix-check
+fpm -s dir -t rpm -n ta-nix-checker -v "$VERSION" -C rpmroot .
+mv ta-nix-checker-${VERSION}-1.x86_64.rpm dist/ta-nix-checker-${VERSION}.rpm
+
+# Limpeza
+rm -rf ta-nix-checker rpmroot

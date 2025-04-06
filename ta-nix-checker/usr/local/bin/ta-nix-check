@@ -1,0 +1,1 @@
+exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"
