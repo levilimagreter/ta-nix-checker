@@ -1,8 +1,8 @@
 #!/bin/bash
 
-set -e
-
+unset VERSION
 : "${VERSION:=1.1.4}"
+
 REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/dev/dist"
 
 log() {
