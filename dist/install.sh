@@ -1,8 +1,9 @@
 #!/bin/bash
 
+set -e
+
 unset VERSION
 : "${VERSION:=1.1.4}"
-
 REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/dev/dist"
 
 log() {
@@ -35,19 +36,19 @@ cd "$TMP_DIR"
 case "$DISTRO_ID" in
     ubuntu|debian)
         log "Baixando pacote .deb..."
-        wget "$REPO_URL/ta-nix-checker_${VERSION}.deb" -O ta-nix-checker.deb
+        wget "${REPO_URL}/ta-nix-checker_${VERSION}.deb" -O ta-nix-checker.deb
         log "Instalando .deb..."
         sudo dpkg -i ta-nix-checker.deb
         ;;
     rhel|centos|rocky|almalinux|fedora)
         log "Baixando pacote .rpm..."
-        wget "$REPO_URL/ta-nix-checker-${VERSION}.rpm" -O ta-nix-checker.rpm
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.rpm" -O ta-nix-checker.rpm
         log "Instalando .rpm..."
         sudo rpm -ivh ta-nix-checker.rpm
         ;;
     *)
         log "Distribuição não identificada com precisão, usando fallback .tar.gz"
-        wget "$REPO_URL/ta-nix-checker-${VERSION}.tar.gz" -O ta-nix-checker.tar.gz
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.tar.gz" -O ta-nix-checker.tar.gz
         mkdir -p /opt/ta-nix-checker
         tar -xzf ta-nix-checker.tar.gz -C /opt/ta-nix-checker
         sudo ln -sf /opt/ta-nix-checker/usr/local/bin/ta-nix-check /usr/local/bin/ta-nix-check
