@@ -1,0 +1,10 @@
+LICENSE
+README.md
+setup.py
+ta_nix_verifier/__init__.py
+ta_nix_verifier/cli.py
+ta_nix_verifier.egg-info/PKG-INFO
+ta_nix_verifier.egg-info/SOURCES.txt
+ta_nix_verifier.egg-info/dependency_links.txt
+ta_nix_verifier.egg-info/entry_points.txt
+ta_nix_verifier.egg-info/top_level.txt

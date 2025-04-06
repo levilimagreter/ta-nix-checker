@@ -1,0 +1,3 @@
+[console_scripts]
+ta-nix-verifier = ta_nix_verifier.cli:main
+

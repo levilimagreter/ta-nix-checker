@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: ta-nix-verifier
+Version: 1.0.0
+Summary: CLI para verificação de comandos e paths do Splunk TA-nix
+Home-page: UNKNOWN
+Author: Levi Lima Greter
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Requires-Python: >=3.6
+License-File: LICENSE
+
+UNKNOWN
+
