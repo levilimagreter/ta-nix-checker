@@ -5,61 +5,62 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: write
-
 jobs:
   build-and-release:
+    name: Build and Publish Release
     runs-on: ubuntu-latest
-    name: Build .deb and Publish Release
 
     steps:
-      - name: Checkout repository
+      - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Extract version from tag
-        id: vars
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      - name: Extrair versão da tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-      - name: Prepare build structure
+      - name: Preparar estrutura do pacote
         run: |
-          mkdir -p build/deb/usr/local/bin
-          mkdir -p build/rpm/usr/local/bin
+          mkdir -p ta-nix-checker/usr/local/bin
+          cp scripts/ta_nix_verification_cli.py ta-nix-checker/usr/local/bin/
+          echo '#!/bin/bash' > ta-nix-checker/usr/local/bin/ta-nix-check
+          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> ta-nix-checker/usr/local/bin/ta-nix-check
+          chmod +x ta-nix-checker/usr/local/bin/ta-nix-check
 
-      - name: Copy files to build dirs
+      - name: Criar pacote .deb
         run: |
-          cp scripts/ta_nix_verification_cli.py build/deb/usr/local/bin/
-          cp scripts/ta_nix_verification_cli.py build/rpm/usr/local/bin/
-          echo '#!/bin/bash' > build/deb/usr/local/bin/ta-nix-check
-          echo '#!/bin/bash' > build/rpm/usr/local/bin/ta-nix-check
-          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> build/deb/usr/local/bin/ta-nix-check
-          echo 'exec python3 /usr/local/bin/ta_nix_verification_cli.py "$@"' >> build/rpm/usr/local/bin/ta-nix-check
-          chmod +x build/deb/usr/local/bin/ta-nix-check
-          chmod +x build/rpm/usr/local/bin/ta-nix-check
+          mkdir -p ta-nix-checker/DEBIAN
+          cat <<EOF > ta-nix-checker/DEBIAN/control
+Package: ta-nix-checker
+Version: ${{ env.VERSION }}
+Section: utils
+Priority: optional
+Architecture: all
+Maintainer: Levi Lima Greter
+Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)
+EOF
+          dpkg-deb --build ta-nix-checker
+          mv ta-nix-checker.deb ta-nix-checker_${{ env.VERSION }}.deb
 
-      - name: Create control file for .deb
+      - name: Criar pacote .tar.gz
         run: |
-          mkdir -p build/deb/DEBIAN
-          echo "Package: ta-nix-checker" > build/deb/DEBIAN/control
-          echo "Version: ${{ steps.vars.outputs.VERSION }}" >> build/deb/DEBIAN/control
-          echo "Section: utils" >> build/deb/DEBIAN/control
-          echo "Priority: optional" >> build/deb/DEBIAN/control
-          echo "Architecture: all" >> build/deb/DEBIAN/control
-          echo "Maintainer: Levi Lima Greter" >> build/deb/DEBIAN/control
-          echo "Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)" >> build/deb/DEBIAN/control
+          tar -czf ta-nix-checker-${{ env.VERSION }}.tar.gz -C ta-nix-checker .
 
-      - name: Build .deb package
+      - name: Criar pacote .rpm (via fpm)
         run: |
-          dpkg-deb --build build/deb
-          mv build/deb.deb ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
+          sudo apt-get update && sudo apt-get install -y ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
+          fpm -s dir -t rpm -n ta-nix-checker -v ${{ env.VERSION }} -C ta-nix-checker .
 
-      - name: Upload .deb and create GitHub Release
+      - name: Renomear .rpm corretamente
+        run: |
+          mv ta-nix-checker-${{ env.VERSION }}-1.noarch.rpm ta-nix-checker-${{ env.VERSION }}.rpm
+
+      - name: Publicar Release no GitHub
         uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ta-nix-checker_${{ env.VERSION }}.deb
+            ta-nix-checker-${{ env.VERSION }}.tar.gz
+            ta-nix-checker-${{ env.VERSION }}.rpm
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: "Versão ${{ steps.vars.outputs.VERSION }}"
-          tag_name: v${{ steps.vars.outputs.VERSION }}
-          files: ta-nix-checker_${{ steps.vars.outputs.VERSION }}.deb
-          draft: false
-          prerelease: false
