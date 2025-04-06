@@ -2,6 +2,9 @@
 
 set -e
 
+# Protege contra export VERSION indesejado
+unset VERSION
+
 # Obter versão mais recente da tag via API pública do GitHub
 VERSION=$(curl -s https://api.github.com/repos/levilimagreter/ta-nix-checker/releases/latest | grep tag_name | cut -d '"' -f 4 | sed 's/^v//')
 REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/main/dist"
