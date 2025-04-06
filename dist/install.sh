@@ -2,39 +2,82 @@
 
 set -e
 
-VERSION="1.1.4"
+# Obter versão mais recente da tag via API pública do GitHub
+VERSION=$(curl -s https://api.github.com/repos/levilimagreter/ta-nix-checker/releases/latest | grep tag_name | cut -d '"' -f 4)
 REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/main/dist"
 
-# Detectar distribuição
+log() {
+  echo "[TA-nix] $1"
+}
+
+check_cmd_or_file() {
+  local label=$1
+  local test_cmd=$2
+  eval "$test_cmd" && echo "[OK] $label suportado" || echo "[X] $label não suportado"
+}
+
+log "Detectando sistema operacional..."
+echo "[DEBUG] Última versão encontrada: $VERSION"
+
 if [ -f /etc/os-release ]; then
     source /etc/os-release
     DISTRO_ID=$ID
 else
-    echo "[ERRO] Não foi possível detectar a distribuição Linux."
+    log "Não foi possível detectar a distribuição Linux."
     exit 1
 fi
 
-echo "[INFO] Detectado sistema: $DISTRO_ID"
+log "Detected $DISTRO_ID-based system"
 
 TMP_DIR=$(mktemp -d -t ta-nix-XXXX)
 cd "$TMP_DIR"
 
 case "$DISTRO_ID" in
     ubuntu|debian)
-        echo "[INFO] Instalando pacote .deb..."
-        sudo dpkg -i ../ta-nix-checker_1.1.4.deb
+        log "Baixando pacote .deb..."
+        wget "${REPO_URL}/ta-nix-checker_${VERSION}.deb" -O ta-nix-checker.deb
+        log "Instalando .deb..."
+        sudo dpkg -i ta-nix-checker.deb
         ;;
     rhel|centos|rocky|almalinux|fedora)
-        echo "[INFO] Instalando pacote .rpm..."
-        sudo rpm -ivh ../ta-nix-checker-1.1.4.rpm
+        log "Baixando pacote .rpm..."
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.rpm" -O ta-nix-checker.rpm
+        log "Instalando .rpm..."
+        sudo rpm -ivh ta-nix-checker.rpm
         ;;
     *)
-        echo "[INFO] Usando fallback com .tar.gz"
+        log "Distribuição não identificada com precisão, usando fallback .tar.gz"
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.tar.gz" -O ta-nix-checker.tar.gz
         mkdir -p /opt/ta-nix-checker
-        tar -xzf ../ta-nix-checker-1.1.4.tar.gz -C /opt/ta-nix-checker
+        tar -xzf ta-nix-checker.tar.gz -C /opt/ta-nix-checker
         sudo ln -sf /opt/ta-nix-checker/usr/local/bin/ta-nix-check /usr/local/bin/ta-nix-check
         ;;
 esac
 
-echo "[OK] Rodando verificador..."
-sudo ta-nix-check || true
+log "Rodando verificação de suporte aos scripts do TA-nix..."
+
+echo "------------------------ [ Sistema ] ------------------------"
+check_cmd_or_file "cpu.sh" "test -r /proc/stat"
+check_cmd_or_file "iostat.sh" "command -v iostat >/dev/null"
+check_cmd_or_file "vmstat.sh" "test -r /proc/meminfo && test -r /proc/vmstat"
+check_cmd_or_file "df.sh" "command -v df >/dev/null"
+check_cmd_or_file "ps.sh" "test -r /proc/1/status"
+check_cmd_or_file "top.sh" "test -r /proc/loadavg"
+check_cmd_or_file "uptime.sh" "test -r /proc/uptime"
+check_cmd_or_file "hardware.sh" "test -r /proc/cpuinfo"
+check_cmd_or_file "interfaces.sh" "test -d /sys/class/net"
+
+echo "------------------------ [ Rede e Usuários ] ------------------------"
+check_cmd_or_file "netstat.sh" "command -v ss >/dev/null"
+check_cmd_or_file "lastlog.sh" "test -r /var/log/wtmp"
+check_cmd_or_file "lsof.sh" "ls /proc/1/fd >/dev/null 2>&1"
+check_cmd_or_file "time.sh" "command -v timedatectl >/dev/null"
+check_cmd_or_file "service.sh" "command -v systemctl >/dev/null"
+
+echo "------------------------ [ Segurança e Serviços ] ------------------------"
+check_cmd_or_file "rlog.sh" "command -v auditctl >/dev/null"
+check_cmd_or_file "nfsiostat.sh" "command -v nfsiostat >/dev/null"
+check_cmd_or_file "VsftpdChecker.sh" "ps aux | grep -q [v]sftpd"
+check_cmd_or_file "SshdChecker.sh" "test -r /etc/ssh/sshd_config"
+
+log "Verificação concluída."
