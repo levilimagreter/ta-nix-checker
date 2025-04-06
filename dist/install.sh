@@ -2,15 +2,14 @@
 
 set -e
 
-unset VERSION
-: "${VERSION:=1.1.4}"
-REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/dev/dist"
+# Obter versão mais recente da tag via API pública do GitHub
+VERSION=$(curl -s https://api.github.com/repos/levilimagreter/ta-nix-checker/releases/latest | grep tag_name | cut -d '"' -f 4)
+REPO_URL="https://raw.githubusercontent.com/levilimagreter/ta-nix-checker/main/dist"
 
 log() {
   echo "[TA-nix] $1"
 }
 
-# Função para checar suporte
 check_cmd_or_file() {
   local label=$1
   local test_cmd=$2
@@ -18,7 +17,7 @@ check_cmd_or_file() {
 }
 
 log "Detectando sistema operacional..."
-echo "[DEBUG] Versão definida: $VERSION"
+echo "[DEBUG] Última versão encontrada: $VERSION"
 
 if [ -f /etc/os-release ]; then
     source /etc/os-release
@@ -36,19 +35,19 @@ cd "$TMP_DIR"
 case "$DISTRO_ID" in
     ubuntu|debian)
         log "Baixando pacote .deb..."
-        eval "wget \"${REPO_URL}/ta-nix-checker_\${VERSION}.deb\" -O ta-nix-checker.deb"
+        wget "${REPO_URL}/ta-nix-checker_${VERSION}.deb" -O ta-nix-checker.deb
         log "Instalando .deb..."
         sudo dpkg -i ta-nix-checker.deb
         ;;
     rhel|centos|rocky|almalinux|fedora)
         log "Baixando pacote .rpm..."
-        eval "wget \"${REPO_URL}/ta-nix-checker-\${VERSION}.rpm\" -O ta-nix-checker.rpm"
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.rpm" -O ta-nix-checker.rpm
         log "Instalando .rpm..."
         sudo rpm -ivh ta-nix-checker.rpm
         ;;
     *)
         log "Distribuição não identificada com precisão, usando fallback .tar.gz"
-        eval "wget \"${REPO_URL}/ta-nix-checker-\${VERSION}.tar.gz\" -O ta-nix-checker.tar.gz"
+        wget "${REPO_URL}/ta-nix-checker-${VERSION}.tar.gz" -O ta-nix-checker.tar.gz
         mkdir -p /opt/ta-nix-checker
         tar -xzf ta-nix-checker.tar.gz -C /opt/ta-nix-checker
         sudo ln -sf /opt/ta-nix-checker/usr/local/bin/ta-nix-check /usr/local/bin/ta-nix-check
