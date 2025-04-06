@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -25,7 +28,7 @@ jobs:
       - name: Extract version from tag
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
 
-        - name: Create DEBIAN control file
+      - name: Create DEBIAN control file
         run: |
           mkdir -p ta-nix-checker/DEBIAN
           echo "Package: ta-nix-checker" > ta-nix-checker/DEBIAN/control
@@ -35,7 +38,6 @@ jobs:
           echo "Architecture: all" >> ta-nix-checker/DEBIAN/control
           echo "Maintainer: Levi Lima Greter" >> ta-nix-checker/DEBIAN/control
           echo "Description: Verificador de pré-requisitos para o Splunk Add-on for Unix/Linux (TA-nix)" >> ta-nix-checker/DEBIAN/control
-EOF
 
       - name: Build .deb package
         run: |
@@ -45,6 +47,12 @@ EOF
       - name: Build .tar.gz package
         run: |
           tar -czf ta-nix-checker-${{ env.VERSION }}.tar.gz ta-nix-checker
+
+      - name: Install fpm
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ruby ruby-dev build-essential
+          sudo gem install --no-document fpm
 
       - name: Build .rpm package
         run: |
